@@ -26,7 +26,7 @@
         if (selector != "") {
             var parts;
             if (!number && !value) {
-                parts = /^([0-9]*.?[0-9]+)(px|em)$/.exec(pair)
+                parts = /^([0-9]*.?[0-9]+)(px|em|rem)$/.exec(pair)
                 if (parts != null) {
                     number = Number(parts[1]);
                     if (number + "" != "NaN") {
@@ -78,7 +78,7 @@
 
         if (selectorText) {
 
-            var regex = /(\[(min\-width|max\-width|min\-height|max\-height)\~\=(\'|\")([0-9]*.?[0-9]+)(px|em)(\'|\")\])(\[(min\-width|max\-width|min\-height|max\-height)\~\=(\'|\")([0-9]*.?[0-9]+)(px|em)(\'|\")\])?/gi;
+            var regex = /(\[(min\-width|max\-width|min\-height|max\-height)\~\=(\'|\")([0-9]*.?[0-9]+)(px|em|rem)(\'|\")\])(\[(min\-width|max\-width|min\-height|max\-height)\~\=(\'|\")([0-9]*.?[0-9]+)(px|em|rem)(\'|\")\])?/gi;
 
             // Split out the full selectors separated by a comma ','
             var selectors = selectorText.split(",");
@@ -94,7 +94,7 @@
 
                         // result[2] = min-width|max-width|min-height|max-height
                         // result[4] = number
-                        // result[5] = px|em
+                        // result[5] = px|em|rem
                         // result[7] = has another
 
                         // Ensure that it contains a valid numeric value to compare against
@@ -117,7 +117,7 @@
                                         }
 
                                         // Remove any sibling element queries
-                                        tail = tail.replace(/(\[(min\-width|max\-width|min\-height|max\-height)\~\=(\'|\")([0-9]*.?[0-9]+)(px|em)(\'|\")\])/gi, "");
+                                        tail = tail.replace(/(\[(min\-width|max\-width|min\-height|max\-height)\~\=(\'|\")([0-9]*.?[0-9]+)(px|em|rem)(\'|\")\])/gi, "");
                                         selector += tail;
                                     }
                                 }
@@ -265,14 +265,23 @@
                     // For each min|max-width|height string
                     for (j in queryData[i]) {
 
-                        // For each number px|em value pair
+                        // For each number px|em|rem value pair
                         for (k in queryData[i][j]) {
 
                             val = queryData[i][j][k][0];
 
-                            if (queryData[i][j][k][1] == "em") {
-                                // Convert EMs to pixels
-                                val = val * (window.getEmPixels ? getEmPixels(element) : 16); // NOTE: Using getEmPixels() has a small performance impact
+                            // NOTE: Using getEmPixels() has a small performance impact
+                            switch (queryData[i][j][k][1]) {
+			        case 'em':
+                                    // Convert EMs to pixels
+                                    val = val * (window.getEmPixels ? getEmPixels(element) : 16);
+				    break;
+                                case 'rem':
+                                    // Convert root EMs to pixels
+                                    val = val * (window.getEmPixels ? getEmPixels(document.body) : 16);
+				    break;
+				default:
+				    // assume 'px' - val is already in pixels
                             }
 
                             /* NOTE: Using offsetWidth/Height so an element can be adjusted when it reaches a specific size.
@@ -336,7 +345,7 @@
             // For each min|max-width|height string
             for (j in queryData[i]) {
 
-                // For each number px|em value pair
+                // For each number px|em|rem value pair
                 for (k in queryData[i][j]) {
 
                     if (data[i] === undefined) {
